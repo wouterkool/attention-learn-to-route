@@ -3,7 +3,7 @@
 Attention based model for learning to solve the Travelling Salesman Problem. Training with REINFORCE with greedy rollout baseline.
 
 ## Paper
-The paper is coming soon. 
+Please see our paper [Attention Solves Your TSP](https://arxiv.org/abs/1803.08475). 
 
 ## Dependencies
 
