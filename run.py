@@ -75,7 +75,7 @@ if __name__ == "__main__":
         baseline = CriticBaseline(
             maybe_cuda_model(
                 CriticNetwork(
-                    problem.INPUT_DIM,
+                    problem.NODE_DIM,
                     opts.embedding_dim,
                     opts.hidden_dim,
                     opts.n_encode_layers,
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     # Initialize optimizer
     optimizer = optim.Adam(
-        [{'params': model.parameters(), 'lr': float(opts.lr_model)}] + baseline.get_learnable_parameters()
+        [{'params': model.parameters(), 'lr': float(opts.lr_model)}]
         + (
             [{'params': baseline.get_learnable_parameters(), 'lr': float(opts.lr_critic)}]
             if len(baseline.get_learnable_parameters()) > 0

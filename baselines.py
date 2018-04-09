@@ -75,7 +75,7 @@ class CriticBaseline(Baseline):
         return v.detach(), F.mse_loss(v, c.detach())
 
     def get_learnable_parameters(self):
-        return self.critic.parameters()
+        return list(self.critic.parameters())
 
     def epoch_callback(self, model, epoch):
         pass
