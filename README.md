@@ -33,6 +33,12 @@ To evaluate a model, use the `--load_path` option to specify the model to load a
 python run.py --graph_size 20 --eval_only --load_path 'outputs/tsp_20/tsp20_rollout_{datetime}/epoch-0.pt'
 ```
 
+To load a pretrained model (single GPU only since it cannot load into `DataParallel`):
+```bash
+CUDA_VISIBLE_DEVICES=0 python run.py --graph_size 100 --eval_only --load_path pretrained/tsp100.pt
+```
+Note that the results may differ slightly from the results reported in the paper, as a different test set was used than the validation set (which depends on the random seed).
+
 For other options and help:
 ```bash
 python run.py -h
