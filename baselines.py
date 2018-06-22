@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 from torch.autograd import Variable
 from scipy.stats import ttest_rel
 import copy
-from train import rollout
+from train import rollout, get_inner_model
 
 class Baseline(object):
 
@@ -27,6 +27,54 @@ class Baseline(object):
 
     def load_state_dict(self, state_dict):
         pass
+
+
+class WarmupBaseline(Baseline):
+
+    def __init__(self, baseline, n_epochs=1, warmup_exp_beta=0.8, ):
+        super(Baseline, self).__init__()
+
+        self.baseline = baseline
+        assert n_epochs > 0, "n_epochs to warmup must be positive"
+        self.warmup_baseline = ExponentialBaseline(warmup_exp_beta)
+        self.alpha = 0
+        self.n_epochs = n_epochs
+
+    def wrap_dataset(self, dataset):
+        if self.alpha > 0:
+            return self.baseline.wrap_dataset(dataset)
+        return self.warmup_baseline.wrap_dataset(dataset)
+
+    def unwrap_batch(self, batch):
+        if self.alpha > 0:
+            return self.baseline.unwrap_batch(batch)
+        return self.warmup_baseline.unwrap_batch(batch)
+
+    def eval(self, x, c):
+
+        if self.alpha == 1:
+            return self.baseline.eval(x, c)
+        if self.alpha == 0:
+            return self.warmup_baseline.eval(x, c)
+        v, l = self.baseline.eval(x, c)
+        vw, lw = self.warmup_baseline.eval(x, c)
+        # Return convex combination of baseline and of loss
+        return self.alpha * v * (1 - self.alpha) * vw, self.alpha * l + (1 - self.alpha * lw)
+
+    def epoch_callback(self, model, epoch):
+        # Need to call epoch callback of inner model (also after first epoch if we have not used it)
+        self.baseline.epoch_callback(model, epoch)
+        self.alpha = (epoch + 1) / float(self.n_epochs)
+        if epoch < self.n_epochs:
+            print("Set warmup alpha = {}".format(self.alpha))
+
+    def state_dict(self):
+        # Checkpointing within warmup stage makes no sense, only save inner baseline
+        return self.baseline.state_dict()
+
+    def load_state_dict(self, state_dict):
+        # Checkpointing within warmup stage makes no sense, only load inner baseline
+        self.baseline.load_state_dict(state_dict)
 
 
 class NoBaseline(Baseline):
@@ -82,11 +130,14 @@ class CriticBaseline(Baseline):
 
     def state_dict(self):
         return {
-            'critic': self.critic
+            'critic': self.critic.state_dict()
         }
 
     def load_state_dict(self, state_dict):
-        self.critic.load_state_dict({**self.critic.state_dict(), **state_dict.get('critic', {})})
+        critic_state_dict = state_dict.get('critic', {})
+        if not isinstance(critic_state_dict, dict):  # backwards compatibility
+            critic_state_dict = critic_state_dict.state_dict()
+        self.critic.load_state_dict({**self.critic.state_dict(), **critic_state_dict})
 
 
 class RolloutBaseline(Baseline):
@@ -122,7 +173,7 @@ class RolloutBaseline(Baseline):
 
     def eval(self, x, c):
         # Use volatile mode for efficient inference (single batch so we do not use rollout function)
-        v, _, _, _ = self.model(Variable(x.data, volatile=True))
+        v, _ = self.model(Variable(x.data, volatile=True))
 
         v.volatile = False  # The returned value should not be volatile
 
@@ -161,7 +212,11 @@ class RolloutBaseline(Baseline):
         }
 
     def load_state_dict(self, state_dict):
-        self._update_model(state_dict['model'], state_dict['epoch'], state_dict['dataset'])
+        # TODO change code such that not model but model parameters are saved
+        # We make it such that it works whether model was saved as data parallel or not
+        load_model = copy.deepcopy(self.model)
+        get_inner_model(load_model).load_state_dict(get_inner_model(state_dict['model']).state_dict())
+        self._update_model(load_model, state_dict['epoch'], state_dict['dataset'])
 
 
 class BaselineDataset(Dataset):

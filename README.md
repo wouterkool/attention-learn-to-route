@@ -1,9 +1,9 @@
-# Attention Solves Your TSP
+# Attention Solves Your TSP, Approximately
 
-Attention based model for learning to solve the Travelling Salesman Problem. Training with REINFORCE with greedy rollout baseline.
+Attention based model for learning to solve the Travelling Salesman Problem (TSP) and the Vehicle Routing Problem (VRP). Training with REINFORCE with greedy rollout baseline.
 
 ## Paper
-Please see our paper [Attention Solves Your TSP](https://arxiv.org/abs/1803.08475). 
+Please see our paper [Attention Solves Your TSP, Approximately](https://arxiv.org/abs/1803.08475). 
 
 ## Dependencies
 
@@ -13,6 +13,7 @@ Please see our paper [Attention Solves Your TSP](https://arxiv.org/abs/1803.0847
 * [PyTorch](http://pytorch.org/)=0.3
 * tqdm
 * [tensorboard_logger](https://github.com/TeamHG-Memex/tensorboard_logger)
+* Matplotlib (optional, only for plotting)
 
 ## Usage
 
@@ -33,9 +34,9 @@ To evaluate a model, use the `--load_path` option to specify the model to load a
 python run.py --graph_size 20 --eval_only --load_path 'outputs/tsp_20/tsp20_rollout_{datetime}/epoch-0.pt'
 ```
 
-To load a pretrained model (single GPU only since it cannot load into `DataParallel`):
+To load a pretrained model:
 ```bash
-CUDA_VISIBLE_DEVICES=0 python run.py --graph_size 100 --eval_only --load_path pretrained/tsp100.pt
+CUDA_VISIBLE_DEVICES=0 python run.py --graph_size 100 --eval_only --load_path pretrained/tsp_100/epoch-99.pt
 ```
 Note that the results may differ slightly from the results reported in the paper, as a different test set was used than the validation set (which depends on the random seed).
 
@@ -43,3 +44,11 @@ For other options and help:
 ```bash
 python run.py -h
 ```
+
+## Example CVRP solution
+See `plot_vrp.ipynb` for an example of loading a pretrained model and plotting the result for Capacitated VRP with 100 nodes.
+
+![CVRP100](images/cvrp_0.png)
+
+## Acknowledgements
+Thanks to [pemami4911/neural-combinatorial-rl-pytorch](https://github.com/pemami4911/neural-combinatorial-rl-pytorch) for getting me started with the code for the Pointer Network.

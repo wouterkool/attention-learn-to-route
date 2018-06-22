@@ -126,7 +126,7 @@ class Normalization(nn.Module):
         self.normalizer = normalizer_class(embed_dim, affine=True)
 
         # Normalization by default initializes affine parameters with bias 0 and weight unif(0,1) which is too large!
-        self.init_parameters()
+        # self.init_parameters()
 
     def init_parameters(self):
 
