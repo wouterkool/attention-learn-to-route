@@ -7,7 +7,6 @@ import pickle
 class TSP(object):
 
     NAME = 'tsp'
-    NODE_DIM = 2
 
     @staticmethod
     def get_costs(dataset, pi):
