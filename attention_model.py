@@ -144,13 +144,9 @@ class AttentionModel(nn.Module):
         # Compute keys, values for the glimpse and keys for the logits once as they can be reused in every step
         fixed_context, attention_node_data_fixed = self._precompute(embeddings)
 
-        context_list = []
-
         # Perform decoding steps
         i = 0
         while not self._is_finished(i, state):
-
-            context_list.append(state)
 
             log_p, mask = self._get_log_p(embeddings, fixed_context, attention_node_data_fixed, state)
 
