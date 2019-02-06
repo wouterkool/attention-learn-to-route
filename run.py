@@ -8,13 +8,13 @@ import torch
 import torch.optim as optim
 from tensorboard_logger import Logger as TbLogger
 
-from critic_network import CriticNetwork
+from nets.critic_network import CriticNetwork
 from options import get_options
 from train import train_epoch, validate, get_inner_model
-from baselines import NoBaseline, ExponentialBaseline, CriticBaseline, RolloutBaseline, WarmupBaseline
-from attention_model import AttentionModel
-from pointer_network import PointerNetwork, CriticNetworkLSTM
-from utils import torch_load_cpu, load_model, maybe_cuda_model, load_problem
+from reinforce_baselines import NoBaseline, ExponentialBaseline, CriticBaseline, RolloutBaseline, WarmupBaseline
+from nets.attention_model import AttentionModel
+from nets.pointer_network import PointerNetwork, CriticNetworkLSTM
+from utils import torch_load_cpu, load_problem
 
 
 def run(opts):
@@ -30,11 +30,13 @@ def run(opts):
     if not opts.no_tensorboard:
         tb_logger = TbLogger(os.path.join(opts.log_dir, "{}_{}".format(opts.problem, opts.graph_size), opts.run_name))
 
-
     os.makedirs(opts.save_dir)
     # Save arguments so exact configuration can always be found
     with open(os.path.join(opts.save_dir, "args.json"), 'w') as f:
         json.dump(vars(opts), f, indent=True)
+
+    # Set the device
+    opts.device = torch.device("cuda:0" if opts.use_cuda else "cpu")
 
     # Figure out what's the problem
     problem = load_problem(opts.problem)
@@ -45,7 +47,7 @@ def run(opts):
     load_path = opts.load_path if opts.load_path is not None else opts.resume
     if load_path is not None:
         print('  [*] Loading data from {}'.format(load_path))
-        load_data = load_data = torch_load_cpu(load_path)
+        load_data = torch_load_cpu(load_path)
 
     # Initialize model
     model_class = {
@@ -53,19 +55,21 @@ def run(opts):
         'pointer': PointerNetwork
     }.get(opts.model, None)
     assert model_class is not None, "Unknown model: {}".format(model_class)
-    model = maybe_cuda_model(
-        model_class(
-            opts.embedding_dim,
-            opts.hidden_dim,
-            problem,
-            n_encode_layers=opts.n_encode_layers,
-            mask_inner=True,
-            mask_logits=True,
-            normalization=opts.normalization,
-            tanh_clipping=opts.tanh_clipping
-        ),
-        opts.use_cuda
-    )
+    model = model_class(
+        opts.embedding_dim,
+        opts.hidden_dim,
+        problem,
+        n_encode_layers=opts.n_encode_layers,
+        mask_inner=True,
+        mask_logits=True,
+        normalization=opts.normalization,
+        tanh_clipping=opts.tanh_clipping,
+        checkpoint_encoder=opts.checkpoint_encoder,
+        shrink_size=opts.shrink_size
+    ).to(opts.device)
+
+    if opts.use_cuda and torch.cuda.device_count() > 1:
+        model = torch.nn.DataParallel(model)
 
     # Overwrite model parameters by parameters to load
     model_ = get_inner_model(model)
@@ -77,7 +81,7 @@ def run(opts):
     elif opts.baseline == 'critic' or opts.baseline == 'critic_lstm':
         assert problem.NAME == 'tsp', "Critic only supported for TSP"
         baseline = CriticBaseline(
-            maybe_cuda_model(
+            (
                 CriticNetworkLSTM(
                     2,
                     opts.embedding_dim,
@@ -93,9 +97,8 @@ def run(opts):
                     opts.hidden_dim,
                     opts.n_encode_layers,
                     opts.normalization
-                ),
-                opts.use_cuda
-            )
+                )
+            ).to(opts.device)
         )
     elif opts.baseline == 'rollout':
         baseline = RolloutBaseline(model, problem, opts)
@@ -127,13 +130,14 @@ def run(opts):
             for k, v in state.items():
                 # if isinstance(v, torch.Tensor):
                 if torch.is_tensor(v):
-                    state[k] = v.cuda()
+                    state[k] = v.to(opts.device)
 
     # Initialize learning rate scheduler, decay by lr_decay once per epoch!
     lr_scheduler = optim.lr_scheduler.LambdaLR(optimizer, lambda epoch: opts.lr_decay ** epoch)
 
     # Start the actual training loop
-    val_dataset = problem.make_dataset(size=opts.graph_size, num_samples=opts.val_size, filename=opts.val_dataset)
+    val_dataset = problem.make_dataset(
+        size=opts.graph_size, num_samples=opts.val_size, filename=opts.val_dataset, distribution=opts.data_distribution)
 
     if opts.resume:
         epoch_resume = int(os.path.splitext(os.path.split(opts.resume)[-1])[0].split("-")[1])

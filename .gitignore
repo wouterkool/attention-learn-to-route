@@ -1,4 +1,11 @@
 data/
 outputs/
 logs/
+results/
 __pycache__/
+.idea
+*/.ipynb_checkpoints
+*.tc.*
+*.tc_backward.*
+*.log
+*.bak
