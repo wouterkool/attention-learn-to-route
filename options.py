@@ -49,6 +49,13 @@ def get_options(args=None):
                              'used for warmup phase), 0 otherwise. Can only be used with rollout baseline.')
     parser.add_argument('--eval_batch_size', type=int, default=1024,
                         help="Batch size to use during (baseline) evaluation")
+    parser.add_argument('--checkpoint_encoder', action='store_true',
+                        help='Set to decrease memory usage by checkpointing encoder')
+    parser.add_argument('--shrink_size', type=int, default=None,
+                        help='Shrink the batch size if at least this many instances in the batch are finished'
+                             ' to save memory (default None means no shrinking)')
+    parser.add_argument('--data_distribution', type=str, default=None,
+                        help='Data distribution to use during training, defaults and options depend on problem.')
 
     # Misc
     parser.add_argument('--log_step', type=int, default=50, help='Log info every log_step steps')

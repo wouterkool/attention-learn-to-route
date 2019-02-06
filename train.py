@@ -4,12 +4,12 @@ from tqdm import tqdm
 import torch
 import math
 
-from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 
-from attention_model import set_decode_type
-from log_utils import log_values
+from nets.attention_model import set_decode_type
+from utils.log_utils import log_values
+from utils import move_to
 
 
 def get_inner_model(model):
@@ -27,22 +27,14 @@ def validate(model, dataset, opts):
     return avg_cost
 
 
-def make_var(val, cuda=False, **kwargs):
-    if isinstance(val, dict):
-        return {k: make_var(v, cuda, **kwargs) for k, v in val.items()}
-    var = Variable(val, **kwargs)
-    if cuda:
-        var = var.cuda()
-    return var
-
-
 def rollout(model, dataset, opts):
     # Put in greedy evaluation mode!
     set_decode_type(model, "greedy")
     model.eval()
 
     def eval_model_bat(bat):
-        cost, _ = model(make_var(bat, opts.use_cuda, volatile=True))
+        with torch.no_grad():
+            cost, _ = model(move_to(bat, opts.device))
         return cost.data.cpu()
 
     return torch.cat([
@@ -61,7 +53,7 @@ def clip_grad_norms(param_groups, max_norm=math.inf):
     :return: grad_norms, clipped_grad_norms: list with (clipped) gradient norms per group
     """
     grad_norms = [
-        torch.nn.utils.clip_grad_norm(
+        torch.nn.utils.clip_grad_norm_(
             group['params'],
             max_norm if max_norm > 0 else math.inf,  # Inf so no clipping but still call to calc
             norm_type=2
@@ -82,7 +74,8 @@ def train_epoch(model, optimizer, baseline, lr_scheduler, epoch, val_dataset, pr
         tb_logger.log_value('learnrate_pg0', optimizer.param_groups[0]['lr'], step)
 
     # Generate new training data for each epoch
-    training_dataset = baseline.wrap_dataset(problem.make_dataset(size=opts.graph_size, num_samples=opts.epoch_size))
+    training_dataset = baseline.wrap_dataset(problem.make_dataset(
+        size=opts.graph_size, num_samples=opts.epoch_size, distribution=opts.data_distribution))
     training_dataloader = DataLoader(training_dataset, batch_size=opts.batch_size, num_workers=1)
 
     # Put model in train mode!
@@ -140,10 +133,9 @@ def train_batch(
         tb_logger,
         opts
 ):
-
     x, bl_val = baseline.unwrap_batch(batch)
-    x = make_var(x, opts.use_cuda)
-    bl_val = make_var(bl_val, opts.use_cuda) if bl_val is not None else None
+    x = move_to(x, opts.device)
+    bl_val = move_to(bl_val, opts.device) if bl_val is not None else None
 
     # Evaluate model, get costs and log probabilities
     cost, log_likelihood = model(x)
