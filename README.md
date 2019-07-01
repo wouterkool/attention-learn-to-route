@@ -18,7 +18,7 @@ For more details, please see our paper [Attention, Learn to Solve Routing Proble
 
 ## Dependencies
 
-* Python>=3.5
+* Python>=3.6
 * NumPy
 * SciPy
 * [PyTorch](http://pytorch.org/)=0.4
