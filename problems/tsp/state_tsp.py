@@ -106,7 +106,7 @@ class StateTSP(NamedTuple):
         return self.prev_a
 
     def get_mask(self):
-        return self.visited
+        return self.visited > 0  # Hacky way to return bool or uint8 depending on pytorch version
 
     def get_nn(self, k=None):
         # Insert step dimension

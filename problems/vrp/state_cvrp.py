@@ -143,12 +143,10 @@ class StateCVRP(NamedTuple):
         else:
             visited_loc = mask_long2bool(self.visited_, n=self.demand.size(-1))
 
+        # For demand steps_dim is inserted by indexing with id, for used_capacity insert node dim for broadcasting
+        exceeds_cap = (self.demand[self.ids, :] + self.used_capacity[:, :, None] > self.VEHICLE_CAPACITY)
         # Nodes that cannot be visited are already visited or too much demand to be served now
-        mask_loc = (
-            visited_loc |
-            # For demand steps_dim is inserted by indexing with id, for used_capacity insert node dim for broadcasting
-            (self.demand[self.ids, :] + self.used_capacity[:, :, None] > self.VEHICLE_CAPACITY)
-        )
+        mask_loc = visited_loc.to(exceeds_cap.dtype) | exceeds_cap
 
         # Cannot visit the depot if just visited and still unserved nodes
         mask_depot = (self.prev_a == 0) & ((mask_loc == 0).int().sum(-1) > 0)

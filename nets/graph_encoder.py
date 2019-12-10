@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import numpy as np
 from torch import nn
 import math
@@ -95,7 +94,7 @@ class MultiHeadAttention(nn.Module):
             mask = mask.view(1, batch_size, n_query, graph_size).expand_as(compatibility)
             compatibility[mask] = -np.inf
 
-        attn = F.softmax(compatibility, dim=-1)
+        attn = torch.softmax(compatibility, dim=-1)
 
         # If there are nodes with no neighbours then softmax returns nan so we fix them to 0
         if mask is not None:

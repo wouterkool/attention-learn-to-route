@@ -142,17 +142,15 @@ class StateOP(NamedTuple):
         :return:
         """
 
+        exceeds_length = (
+            self.lengths[:, :, None] + (self.coords[self.ids, :, :] - self.cur_coord[:, :, None, :]).norm(p=2, dim=-1)
+            > self.max_length[self.ids, :]
+        )
         # Note: this always allows going to the depot, but that should always be suboptimal so be ok
         # Cannot visit if already visited or if length that would be upon arrival is too large to return to depot
         # If the depot has already been visited then we cannot visit anymore
-        visited_ = self.visited
-        mask = (
-            visited_ | visited_[:, :, 0:1] |
-            (
-                self.lengths[:, :, None] + (self.coords[self.ids, :, :] - self.cur_coord[:, :, None, :]).norm(p=2, dim=-1)
-                > self.max_length[self.ids, :]
-            )
-        )
+        visited_ = self.visited.to(exceeds_length.dtype)
+        mask = visited_ | visited_[:, :, 0:1] | exceeds_length
         # Depot can always be visited
         # (so we do not hardcode knowledge that this is strictly suboptimal if other options are available)
         mask[:, :, 0] = 0

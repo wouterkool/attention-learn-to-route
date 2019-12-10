@@ -1,6 +1,5 @@
 import torch
 from torch import nn
-import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 import math
 from typing import NamedTuple
@@ -131,7 +130,7 @@ class AttentionModel(nn.Module):
         :return:
         """
 
-        if self.checkpoint_encoder:
+        if self.checkpoint_encoder and self.training:  # Only checkpoint if we need gradients
             embeddings, _ = checkpoint(self.embedder, self._init_embed(input))
         else:
             embeddings, _ = self.embedder(self._init_embed(input))
@@ -360,7 +359,7 @@ class AttentionModel(nn.Module):
         log_p, glimpse = self._one_to_many_logits(query, glimpse_K, glimpse_V, logit_K, mask)
 
         if normalize:
-            log_p = F.log_softmax(log_p / self.temp, dim=-1)
+            log_p = torch.log_softmax(log_p / self.temp, dim=-1)
 
         assert not torch.isnan(log_p).any()
 
@@ -465,7 +464,7 @@ class AttentionModel(nn.Module):
             compatibility[mask[None, :, :, None, :].expand_as(compatibility)] = -math.inf
 
         # Batch matrix multiplication to compute heads (n_heads, batch_size, num_steps, val_size)
-        heads = torch.matmul(F.softmax(compatibility, dim=-1), glimpse_V)
+        heads = torch.matmul(torch.softmax(compatibility, dim=-1), glimpse_V)
 
         # Project to get glimpse/updated context node embedding (batch_size, num_steps, embedding_dim)
         glimpse = self.project_out(
@@ -480,7 +479,7 @@ class AttentionModel(nn.Module):
 
         # From the logits compute the probabilities by clipping, masking and softmax
         if self.tanh_clipping > 0:
-            logits = F.tanh(logits) * self.tanh_clipping
+            logits = torch.tanh(logits) * self.tanh_clipping
         if self.mask_logits:
             logits[mask] = -math.inf
 
