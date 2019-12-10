@@ -162,7 +162,7 @@ class StatePCTSP(NamedTuple):
         # Cannot visit depot if not yet collected 1 total prize and there are unvisited nodes
         mask[:, :, 0] = (self.cur_total_prize < 1.) & (visited_[:, :, 1:].int().sum(-1) < visited_[:, :, 1:].size(-1))
 
-        return mask
+        return mask > 0  # Hacky way to return bool or uint8 depending on pytorch version
 
     def construct_solutions(self, actions):
         return actions

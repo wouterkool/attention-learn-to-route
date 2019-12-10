@@ -68,7 +68,6 @@ def train_epoch(model, optimizer, baseline, lr_scheduler, epoch, val_dataset, pr
     print("Start train epoch {}, lr={} for run {}".format(epoch, optimizer.param_groups[0]['lr'], opts.run_name))
     step = epoch * (opts.epoch_size // opts.batch_size)
     start_time = time.time()
-    lr_scheduler.step(epoch)
 
     if not opts.no_tensorboard:
         tb_logger.log_value('learnrate_pg0', optimizer.param_groups[0]['lr'], step)
@@ -120,6 +119,9 @@ def train_epoch(model, optimizer, baseline, lr_scheduler, epoch, val_dataset, pr
         tb_logger.log_value('val_avg_reward', avg_reward, step)
 
     baseline.epoch_callback(model, epoch)
+
+    # lr_scheduler should be called at end of epoch
+    lr_scheduler.step()
 
 
 def train_batch(

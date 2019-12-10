@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import torch.nn.functional as F
 import math
 import numpy as np
 
@@ -105,7 +104,7 @@ class Decoder(nn.Module):
         logits, h_out = self.calc_logits(x, h_in, logit_mask, context, self.mask_glimpses, self.mask_logits)
 
         # Calculate log_softmax for better numerical stability
-        log_p = F.log_softmax(logits, dim=1)
+        log_p = torch.log_softmax(logits, dim=1)
         probs = log_p.exp()
 
         if not self.mask_logits:

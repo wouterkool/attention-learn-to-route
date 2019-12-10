@@ -21,7 +21,7 @@ For more details, please see our paper [Attention, Learn to Solve Routing Proble
 * Python>=3.6
 * NumPy
 * SciPy
-* [PyTorch](http://pytorch.org/)=0.4
+* [PyTorch](http://pytorch.org/)>=1.1
 * tqdm
 * [tensorboard_logger](https://github.com/TeamHG-Memex/tensorboard_logger)
 * Matplotlib (optional, only for plotting)
