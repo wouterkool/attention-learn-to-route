@@ -12,7 +12,7 @@ import time
 from datetime import timedelta
 from utils.functions import parse_softmax_temperature
 mp = torch.multiprocessing.get_context('spawn')
-
+import greedy_solver
 
 def get_best(sequences, cost, ids=None, batch_size=None):
     """
@@ -136,6 +136,7 @@ def _eval_dataset(model, dataset, width, softmax_temp, opts, device):
                     batch_rep = width
                     iter_rep = 1
                 assert batch_rep > 0
+                results_greedy, greedy_costs = greedy_solver.get_route(batch)
                 # This returns (batch_size, iter_rep shape)
                 sequences, costs = model.sample_many(batch, batch_rep=batch_rep, iter_rep=iter_rep)
                 batch_size = len(costs)
