@@ -14,7 +14,7 @@ def find_nearest(prev, coords, mask):
         for i in range(coords.shape[1]):
             if ~mask.squeeze()[j][i]:
 
-                dist_eu = math.sqrt((coords[j][prev][0] - coords[j][i][0]) ** 2 + (coords[j][prev][1] - coords[j][i][1]) ** 2)
+                dist_eu = math.sqrt((coords[j][prev[j]][0] - coords[j][i][0]) ** 2 + (coords[j][prev[j]][1] - coords[j][i][1]) ** 2)
                 if dist_eu < min_dist[j]:  # and dist_eu < min_dist:
                     min_index[j] = i
                     min_dist[j] = dist_eu
@@ -30,11 +30,11 @@ def get_route(input):
     state.initialize(input)
 
     # Perform decoding steps
-    i, prev, batch_size = 0, -1, input['loc'].shape[0]
+    i, batch_size = 0, input['loc'].shape[0]
     # max_route_length = int(len(input['tos'][1]) * 1.5)
-    prev = 0 # start at the Depo
+    prev = torch.zeros(batch_size, dtype=int) # start at the Depo
     while not (state.all_finished()):
-        if i > 50:
+        if i > 150:
             print('Too many iterations. i = {}. Breaking'.format(i))
             break # TODO: Shouldent happen - or allow Unassigned tasks
 
@@ -43,7 +43,7 @@ def get_route(input):
         selected = find_nearest(prev, state.coords, mask)  #
         state = state.update(selected)
         sequences.append(selected)
-        prev = selected[0]
+        prev = selected
         i += 1
 
     # Collected lists, return Tensor

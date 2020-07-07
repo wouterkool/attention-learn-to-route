@@ -72,9 +72,10 @@ def eval_dataset(dataset_path, width, softmax_temp, opts):
     # This is parallelism, even if we use multiprocessing (we report as if we did not use multiprocessing, e.g. 1 GPU)
     parallelism = opts.eval_batch_size
 
-    costs, tours, durations = zip(*results)  # Not really costs since they should be negative
+    costs, tours, durations, greedy_costs = zip(*results)  # Not really costs since they should be negative
 
-    print("Average cost: {} +- {}".format(np.mean(costs), 2 * np.std(costs) / np.sqrt(len(costs))))
+    print("Average cost       : {} +- {}".format(np.mean(costs), 2 * np.std(costs) / np.sqrt(len(costs))))
+    print("Average greedy cost: {} +- {}".format(np.mean(greedy_costs), 2 * np.std(greedy_costs) / np.sqrt(len(greedy_costs))))
     print("Average serial duration: {} +- {}".format(
         np.mean(durations), 2 * np.std(durations) / np.sqrt(len(durations))))
     print("Average parallel duration: {}".format(np.mean(durations) / parallelism))
@@ -160,7 +161,7 @@ def _eval_dataset(model, dataset, width, softmax_temp, opts, device):
                 batch_size
             )
         duration = time.time() - start
-        for seq, cost in zip(sequences, costs):
+        for seq, cost, greedy_cost in zip(sequences, costs, greedy_costs):
             if model.problem.NAME == "tsp":
                 seq = seq.tolist()  # No need to trim as all are same length
             elif model.problem.NAME in ("cvrp", "sdvrp"):
@@ -170,7 +171,7 @@ def _eval_dataset(model, dataset, width, softmax_temp, opts, device):
             else:
                 assert False, "Unkown problem: {}".format(model.problem.NAME)
             # Note VRP only
-            results.append((cost, seq, duration))
+            results.append((cost, seq, duration, greedy_cost))
 
     return results
 
