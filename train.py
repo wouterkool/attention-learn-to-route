@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torch.nn import DataParallel
 
 from nets.attention_model import set_decode_type
-from utils.log_utils import log_values
+from utils.log_utils import log_values, persist_train_progress
 from utils import move_to
 
 
@@ -105,10 +105,10 @@ def train_epoch(model, optimizer, baseline, lr_scheduler, epoch, val_dataset, pr
         torch.save(
             {
                 'model': get_inner_model(model).state_dict(),
-                'optimizer': optimizer.state_dict(),
-                'rng_state': torch.get_rng_state(),
-                'cuda_rng_state': torch.cuda.get_rng_state_all(),
-                'baseline': baseline.state_dict()
+                #'optimizer': optimizer.state_dict(),
+                #'rng_state': torch.get_rng_state(),
+                #'cuda_rng_state': torch.cuda.get_rng_state_all(),
+                #'baseline': baseline.state_dict()
             },
             os.path.join(opts.save_dir, 'epoch-{}.pt'.format(epoch))
         )
@@ -160,3 +160,4 @@ def train_batch(
     if step % int(opts.log_step) == 0:
         log_values(cost, grad_norms, epoch, batch_id, step,
                    log_likelihood, reinforce_loss, bl_loss, tb_logger, opts)
+        persist_train_progress(cost, epoch, log_likelihood, reinforce_loss)

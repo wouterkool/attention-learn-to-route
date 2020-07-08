@@ -2,6 +2,8 @@ data/
 outputs/
 logs/
 results/
+pretrained/
+mlruns/
 __pycache__/
 .idea
 */.ipynb_checkpoints
@@ -9,3 +11,5 @@ __pycache__/
 *.tc_backward.*
 *.log
 *.bak
+*.csv
+*.json

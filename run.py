@@ -15,10 +15,11 @@ from reinforce_baselines import NoBaseline, ExponentialBaseline, CriticBaseline,
 from nets.attention_model import AttentionModel
 from nets.pointer_network import PointerNetwork, CriticNetworkLSTM
 from utils import torch_load_cpu, load_problem
-
+from utils.log_utils import persist_run_params
+import mlflow
 
 def run(opts):
-
+    persist_run_params(opts)
     # Pretty print the run args
     pp.pprint(vars(opts))
 
@@ -169,4 +170,5 @@ def run(opts):
 
 
 if __name__ == "__main__":
-    run(get_options())
+    with mlflow.start_run() as r:
+        run(get_options())

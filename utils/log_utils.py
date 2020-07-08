@@ -1,3 +1,5 @@
+import mlflow
+
 def log_values(cost, grad_norms, epoch, batch_id, step,
                log_likelihood, reinforce_loss, bl_loss, tb_logger, opts):
     avg_cost = cost.mean().item()
@@ -22,3 +24,19 @@ def log_values(cost, grad_norms, epoch, batch_id, step,
             tb_logger.log_value('critic_loss', bl_loss.item(), step)
             tb_logger.log_value('critic_grad_norm', grad_norms[1], step)
             tb_logger.log_value('critic_grad_norm_clipped', grad_norms_clipped[1], step)
+
+def persist_train_progress(cost, epoch, log_likelihood, reinforce_loss):
+    avg_cost = cost.mean().item()
+    mlflow.log_metric("avg_cost", float(avg_cost), step=epoch)
+    mlflow.log_metric("actor_loss", float(reinforce_loss.item()), step=epoch)
+    mlflow.log_metric("nll", float(-log_likelihood.mean().item()), step=epoch)
+
+
+def persist_run_params(opts):
+    mlflow.log_param("graph_size", opts.graph_size)
+    mlflow.log_param("batch_size", opts.batch_size)
+    mlflow.log_param("epoch_size", opts.epoch_size)
+    mlflow.log_param("val_size", opts.val_size)
+    mlflow.log_param("shift_time", opts.shift_time)
+    mlflow.log_param("smallest_task_time", opts.smallest_task_time)
+    mlflow.log_param("is_dynamic_embed", opts.is_dynamic_embed)
