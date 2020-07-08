@@ -17,6 +17,7 @@ from nets.pointer_network import PointerNetwork, CriticNetworkLSTM
 from utils import torch_load_cpu, load_problem
 from utils.log_utils import persist_run_params
 import mlflow
+from eval import eval_dataset
 
 def run(opts):
     persist_run_params(opts)
@@ -167,8 +168,13 @@ def run(opts):
                 tb_logger,
                 opts
             )
-
+    return model
 
 if __name__ == "__main__":
     with mlflow.start_run() as r:
-        run(get_options())
+        opts = get_options()
+        model = run(opts)
+
+        # When training is done compare results to greedy
+        eval_dataset('data/vrp/vrp20_validation_seed4321.pkl', 0, 1, opts, model)
+

@@ -1,4 +1,6 @@
 import mlflow
+import numpy as np
+
 
 def log_values(cost, grad_norms, epoch, batch_id, step,
                log_likelihood, reinforce_loss, bl_loss, tb_logger, opts):
@@ -37,6 +39,14 @@ def persist_run_params(opts):
     mlflow.log_param("batch_size", opts.batch_size)
     mlflow.log_param("epoch_size", opts.epoch_size)
     mlflow.log_param("val_size", opts.val_size)
-    mlflow.log_param("shift_time", opts.shift_time)
-    mlflow.log_param("smallest_task_time", opts.smallest_task_time)
-    mlflow.log_param("is_dynamic_embed", opts.is_dynamic_embed)
+    #  mlflow.log_param("shift_time", opts.shift_time)
+    #  mlflow.log_param("smallest_task_time", opts.smallest_task_time)
+    #  mlflow.log_param("is_dynamic_embed", opts.is_dynamic_embed)
+
+def persist_final_training_score(costs, greedy_costs):
+    mean_model_cost, std_model_cost = np.mean(costs), 2 * np.std(costs) / np.sqrt(len(costs))
+    mean_greedy_cost, std_greedy_cost = np.mean(greedy_costs), 2 * np.std(greedy_costs) / np.sqrt(len(greedy_costs))
+    mlflow.log_param("model_mean_cost", mean_model_cost)
+    mlflow.log_param("greedy_mean_cost", mean_greedy_cost)
+    mlflow.log_param("std_model_cost", std_model_cost)
+    mlflow.log_param("std_greedy_cost", std_greedy_cost)

@@ -71,6 +71,18 @@ def get_options(args=None):
     parser.add_argument('--no_tensorboard', action='store_true', help='Disable logging TensorBoard files')
     parser.add_argument('--no_progress_bar', action='store_true', help='Disable progress bar')
 
+    # opts to run eval against greedy at the end
+    parser.add_argument('--results_dir', default='results', help="Name of results directory")
+    parser.add_argument('--multiprocessing', action='store_true',
+                        help='Use multiprocessing to parallelize over multiple GPUs')
+    parser.add_argument('--offset', type=int, default=0,
+                        help='Offset where to start in dataset (default 0)')
+    parser.add_argument('--decode_strategy', type=str,
+                        help='Beam search (bs), Sampling (sample) or Greedy (greedy)')
+    parser.add_argument('--max_calc_batch_size', type=int, default=10000, help='Size for subbatches')
+    parser.add_argument("-f", action='store_true', help="Set true to overwrite")
+    parser.add_argument("-o", default=None, help="Name of the results file to write")
+
     opts = parser.parse_args(args)
 
     opts.use_cuda = torch.cuda.is_available() and not opts.no_cuda

@@ -49,9 +49,10 @@ def eval_dataset_mp(args):
     return _eval_dataset(model, dataset, width, softmax_temp, opts, device)
 
 
-def eval_dataset(dataset_path, width, softmax_temp, opts):
+def eval_dataset(dataset_path, width, softmax_temp, opts, model = None):
     # Even with multiprocessing, we load the model here since it contains the name where to write results
-    model, _ = load_model(opts.model)
+    if model is None:
+        model, _ = load_model(opts.model)
     use_cuda = torch.cuda.is_available() and not opts.no_cuda
     if opts.multiprocessing:
         assert use_cuda, "Can only do multiprocessing with cuda"
@@ -73,9 +74,11 @@ def eval_dataset(dataset_path, width, softmax_temp, opts):
     parallelism = opts.eval_batch_size
 
     costs, tours, durations, greedy_costs = zip(*results)  # Not really costs since they should be negative
+    mean_model_cost, std_model_cost = np.mean(costs), 2 * np.std(costs) / np.sqrt(len(costs))
+    mean_greedy_cost, std_greedy_cost = np.mean(greedy_costs), 2 * np.std(greedy_costs) / np.sqrt(len(greedy_costs))
 
-    print("Average cost       : {} +- {}".format(np.mean(costs), 2 * np.std(costs) / np.sqrt(len(costs))))
-    print("Average greedy cost: {} +- {}".format(np.mean(greedy_costs), 2 * np.std(greedy_costs) / np.sqrt(len(greedy_costs))))
+    print("Average cost       : {} +- {}".format(mean_model_cost, std_model_cost))
+    print("Average greedy cost: {} +- {}".format(mean_greedy_cost, std_greedy_cost))
     print("Average serial duration: {} +- {}".format(
         np.mean(durations), 2 * np.std(durations) / np.sqrt(len(durations))))
     print("Average parallel duration: {}".format(np.mean(durations) / parallelism))
@@ -101,7 +104,7 @@ def eval_dataset(dataset_path, width, softmax_temp, opts):
 
     save_dataset((results, parallelism), out_file)
 
-    return costs, tours, durations
+    return costs, tours, durations, greedy_costs
 
 
 def _eval_dataset(model, dataset, width, softmax_temp, opts, device):
