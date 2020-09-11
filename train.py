@@ -13,6 +13,10 @@ from utils import move_to
 
 #this is this changed branch at the moment
 # nothing else right
+
+
+# this is commit 3
+
 def get_inner_model(model):
     return model.module if isinstance(model, DataParallel) else model
 
