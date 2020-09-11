@@ -11,7 +11,8 @@ from nets.attention_model import set_decode_type
 from utils.log_utils import log_values
 from utils import move_to
 
-
+#this is this changed branch at the moment
+# nothing else right
 def get_inner_model(model):
     return model.module if isinstance(model, DataParallel) else model
 
