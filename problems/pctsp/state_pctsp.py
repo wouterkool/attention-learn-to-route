@@ -46,7 +46,7 @@ class StatePCTSP(NamedTuple):
                 cur_total_penalty=self.cur_total_penalty[key],
                 cur_coord=self.cur_coord[key],
             )
-        return super(StatePCTSP, self).__getitem__(key)
+        return self[key]
 
     # Warning: cannot override len of NamedTuple, len should be number of fields, not batch size
     # def __len__(self):

@@ -31,7 +31,7 @@ class StateSDVRP(NamedTuple):
                 lengths=self.lengths[key],
                 cur_coord=self.cur_coord[key],
             )
-        return super(StateSDVRP, self).__getitem__(key)
+        return self[key]
 
     @staticmethod
     def initialize(input):

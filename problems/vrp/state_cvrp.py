@@ -43,7 +43,7 @@ class StateCVRP(NamedTuple):
                 lengths=self.lengths[key],
                 cur_coord=self.cur_coord[key],
             )
-        return super(StateCVRP, self).__getitem__(key)
+        return self[key]
 
     # Warning: cannot override len of NamedTuple, len should be number of fields, not batch size
     # def __len__(self):

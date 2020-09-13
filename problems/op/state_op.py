@@ -45,7 +45,7 @@ class StateOP(NamedTuple):
                 cur_coord=self.cur_coord[key],
                 cur_total_prize=self.cur_total_prize[key],
             )
-        return super(StateOP, self).__getitem__(key)
+        return self[key]
 
     # Warning: cannot override len of NamedTuple, len should be number of fields, not batch size
     # def __len__(self):

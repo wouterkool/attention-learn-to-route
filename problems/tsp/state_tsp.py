@@ -37,7 +37,7 @@ class StateTSP(NamedTuple):
                 lengths=self.lengths[key],
                 cur_coord=self.cur_coord[key] if self.cur_coord is not None else None,
             )
-        return super(StateTSP, self).__getitem__(key)
+        return self[key]
 
     @staticmethod
     def initialize(loc, visited_dtype=torch.uint8):
