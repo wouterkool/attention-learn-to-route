@@ -104,10 +104,9 @@ class MultiHeadAttention(nn.Module):
 
         heads = torch.matmul(attn, V)
 
-        out = torch.mm(
-            heads.permute(1, 2, 0, 3).contiguous().view(-1, self.n_heads * self.val_dim),
-            self.W_out.view(-1, self.embed_dim)
-        ).view(batch_size, n_query, self.embed_dim)
+        heads = heads.transpose(0, 1) # swap the dimensions for batch and heads to align it for the matmul
+        projected_heads = torch.matmul(heads, self.W_out)
+        out = torch.sum(projected_heads, dim=1) # sum across heads
 
         return out
 
