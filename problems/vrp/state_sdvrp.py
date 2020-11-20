@@ -22,16 +22,15 @@ class StateSDVRP(NamedTuple):
     VEHICLE_CAPACITY = 1.0  # Hardcoded
 
     def __getitem__(self, key):
-        if torch.is_tensor(key) or isinstance(key, slice):  # If tensor, idx all tensors by this tensor:
-            return self._replace(
-                ids=self.ids[key],
-                prev_a=self.prev_a[key],
-                used_capacity=self.used_capacity[key],
-                demands_with_depot=self.demands_with_depot[key],
-                lengths=self.lengths[key],
-                cur_coord=self.cur_coord[key],
-            )
-        return super(StateSDVRP, self).__getitem__(key)
+        assert torch.is_tensor(key) or isinstance(key, slice)  # If tensor, idx all tensors by this tensor:
+        return self._replace(
+            ids=self.ids[key],
+            prev_a=self.prev_a[key],
+            used_capacity=self.used_capacity[key],
+            demands_with_depot=self.demands_with_depot[key],
+            lengths=self.lengths[key],
+            cur_coord=self.cur_coord[key],
+        )
 
     @staticmethod
     def initialize(input):

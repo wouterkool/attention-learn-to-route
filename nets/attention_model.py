@@ -29,15 +29,14 @@ class AttentionModelFixed(NamedTuple):
     logit_key: torch.Tensor
 
     def __getitem__(self, key):
-        if torch.is_tensor(key) or isinstance(key, slice):
-            return AttentionModelFixed(
-                node_embeddings=self.node_embeddings[key],
-                context_node_projected=self.context_node_projected[key],
-                glimpse_key=self.glimpse_key[:, key],  # dim 0 are the heads
-                glimpse_val=self.glimpse_val[:, key],  # dim 0 are the heads
-                logit_key=self.logit_key[key]
-            )
-        return super(AttentionModelFixed, self).__getitem__(key)
+        assert torch.is_tensor(key) or isinstance(key, slice)
+        return AttentionModelFixed(
+            node_embeddings=self.node_embeddings[key],
+            context_node_projected=self.context_node_projected[key],
+            glimpse_key=self.glimpse_key[:, key],  # dim 0 are the heads
+            glimpse_val=self.glimpse_val[:, key],  # dim 0 are the heads
+            logit_key=self.logit_key[key]
+        )
 
 
 class AttentionModel(nn.Module):
@@ -172,7 +171,7 @@ class AttentionModel(nn.Module):
         flat_feas = flat_score > -1e10  # != -math.inf triggers
 
         # Parent is row idx of ind_topk, can be found by enumerating elements and dividing by number of columns
-        flat_parent = torch.arange(flat_action.size(-1), out=flat_action.new()) / ind_topk.size(-1)
+        flat_parent = torch.arange(flat_action.size(-1), out=flat_action.new()) // ind_topk.size(-1)
 
         # Filter infeasible
         feas_ind_2d = torch.nonzero(flat_feas)
