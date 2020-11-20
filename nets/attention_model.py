@@ -29,15 +29,14 @@ class AttentionModelFixed(NamedTuple):
     logit_key: torch.Tensor
 
     def __getitem__(self, key):
-        if torch.is_tensor(key) or isinstance(key, slice):
-            return AttentionModelFixed(
-                node_embeddings=self.node_embeddings[key],
-                context_node_projected=self.context_node_projected[key],
-                glimpse_key=self.glimpse_key[:, key],  # dim 0 are the heads
-                glimpse_val=self.glimpse_val[:, key],  # dim 0 are the heads
-                logit_key=self.logit_key[key]
-            )
-        return super(AttentionModelFixed, self).__getitem__(key)
+        assert torch.is_tensor(key) or isinstance(key, slice)
+        return AttentionModelFixed(
+            node_embeddings=self.node_embeddings[key],
+            context_node_projected=self.context_node_projected[key],
+            glimpse_key=self.glimpse_key[:, key],  # dim 0 are the heads
+            glimpse_val=self.glimpse_val[:, key],  # dim 0 are the heads
+            logit_key=self.logit_key[key]
+        )
 
 
 class AttentionModel(nn.Module):

@@ -70,15 +70,14 @@ class BatchBeam(NamedTuple):
         return self.state.ids.view(-1)  # Need to flat as state has steps dimension
 
     def __getitem__(self, key):
-        if torch.is_tensor(key) or isinstance(key, slice):  # If tensor, idx all tensors by this tensor:
-            return self._replace(
-                # ids=self.ids[key],
-                score=self.score[key] if self.score is not None else None,
-                state=self.state[key],
-                parent=self.parent[key] if self.parent is not None else None,
-                action=self.action[key] if self.action is not None else None
-            )
-        return super(BatchBeam, self).__getitem__(key)
+        assert torch.is_tensor(key) or isinstance(key, slice)  # If tensor, idx all tensors by this tensor:
+        return self._replace(
+            # ids=self.ids[key],
+            score=self.score[key] if self.score is not None else None,
+            state=self.state[key],
+            parent=self.parent[key] if self.parent is not None else None,
+            action=self.action[key] if self.action is not None else None
+        )
 
     # Do not use __len__ since this is used by namedtuple internally and should be number of fields
     # def __len__(self):
@@ -207,15 +206,13 @@ class CachedLookup(object):
         assert not isinstance(key, slice), "CachedLookup does not support slicing, " \
                                            "you can slice the result of an index operation instead"
 
-        if torch.is_tensor(key):  # If tensor, idx all tensors by this tensor:
+        assert torch.is_tensor(key)  # If tensor, idx all tensors by this tensor:
 
-            if self.key is None:
-                self.key = key
-                self.current = self.orig[key]
-            elif len(key) != len(self.key) or (key != self.key).any():
-                self.key = key
-                self.current = self.orig[key]
+        if self.key is None:
+            self.key = key
+            self.current = self.orig[key]
+        elif len(key) != len(self.key) or (key != self.key).any():
+            self.key = key
+            self.current = self.orig[key]
 
-            return self.current
-
-        return super(CachedLookup, self).__getitem__(key)
+        return self.current
