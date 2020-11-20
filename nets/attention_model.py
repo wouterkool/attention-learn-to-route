@@ -171,7 +171,7 @@ class AttentionModel(nn.Module):
         flat_feas = flat_score > -1e10  # != -math.inf triggers
 
         # Parent is row idx of ind_topk, can be found by enumerating elements and dividing by number of columns
-        flat_parent = torch.arange(flat_action.size(-1), out=flat_action.new()) / ind_topk.size(-1)
+        flat_parent = torch.arange(flat_action.size(-1), out=flat_action.new()) // ind_topk.size(-1)
 
         # Filter infeasible
         feas_ind_2d = torch.nonzero(flat_feas)
