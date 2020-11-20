@@ -19,14 +19,13 @@ class MultiHeadAttention(nn.Module):
             self,
             n_heads,
             input_dim,
-            embed_dim=None,
+            embed_dim,
             val_dim=None,
             key_dim=None
     ):
         super(MultiHeadAttention, self).__init__()
 
         if val_dim is None:
-            assert embed_dim is not None, "Provide either embed_dim or val_dim"
             val_dim = embed_dim // n_heads
         if key_dim is None:
             key_dim = val_dim
@@ -43,8 +42,7 @@ class MultiHeadAttention(nn.Module):
         self.W_key = nn.Parameter(torch.Tensor(n_heads, input_dim, key_dim))
         self.W_val = nn.Parameter(torch.Tensor(n_heads, input_dim, val_dim))
 
-        if embed_dim is not None:
-            self.W_out = nn.Parameter(torch.Tensor(n_heads, key_dim, embed_dim))
+        self.W_out = nn.Parameter(torch.Tensor(n_heads, val_dim, embed_dim))
 
         self.init_parameters()
 
