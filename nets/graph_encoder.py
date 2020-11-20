@@ -109,6 +109,15 @@ class MultiHeadAttention(nn.Module):
             self.W_out.view(-1, self.embed_dim)
         ).view(batch_size, n_query, self.embed_dim)
 
+        # Alternative:
+        # headst = heads.transpose(0, 1)  # swap the dimensions for batch and heads to align it for the matmul
+        # # proj_h = torch.einsum('bhni,hij->bhnj', headst, self.W_out)
+        # projected_heads = torch.matmul(headst, self.W_out)
+        # out = torch.sum(projected_heads, dim=1)  # sum across heads
+
+        # Or:
+        # out = torch.einsum('hbni,hij->bnj', heads, self.W_out)
+
         return out
 
 
