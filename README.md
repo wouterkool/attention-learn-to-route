@@ -20,10 +20,10 @@ For more details, please see our paper [Attention, Learn to Solve Routing Proble
 
 ## Dependencies
 
-* Python>=3.6
+* Python>=3.8
 * NumPy
 * SciPy
-* [PyTorch](http://pytorch.org/)>=1.1
+* [PyTorch](http://pytorch.org/)>=1.7
 * tqdm
 * [tensorboard_logger](https://github.com/TeamHG-Memex/tensorboard_logger)
 * Matplotlib (optional, only for plotting)
