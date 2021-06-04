@@ -9,5 +9,6 @@ dependencies:
 - pytorch
 - torchvision
 - cuda91
+- pip
 - pip:
   - tensorboard_logger
