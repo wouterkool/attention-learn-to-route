@@ -59,13 +59,13 @@ class WarmupBaseline(Baseline):
         v, l = self.baseline.eval(x, c)
         vw, lw = self.warmup_baseline.eval(x, c)
         # Return convex combination of baseline and of loss
-        return self.alpha * v + (1 - self.alpha) * vw, self.alpha * l + (1 - self.alpha * lw)
+        return self.alpha * v + (1 - self.alpha) * vw, self.alpha * l + (1 - self.alpha) * lw
 
     def epoch_callback(self, model, epoch):
         # Need to call epoch callback of inner model (also after first epoch if we have not used it)
         self.baseline.epoch_callback(model, epoch)
-        self.alpha = (epoch + 1) / float(self.n_epochs)
         if epoch < self.n_epochs:
+            self.alpha = (epoch + 1) / float(self.n_epochs)
             print("Set warmup alpha = {}".format(self.alpha))
 
     def state_dict(self):
