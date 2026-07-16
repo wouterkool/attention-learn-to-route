@@ -23,6 +23,16 @@ def get_options(args=None):
     parser.add_argument('--hidden_dim', type=int, default=128, help='Dimension of hidden layers in Enc/Dec')
     parser.add_argument('--n_encode_layers', type=int, default=3,
                         help='Number of layers in the encoder/critic network')
+    parser.add_argument('--local_topk', type=int, default=None,
+                        help='Candidate set size for the adaptive sparse decoder')
+    parser.add_argument('--adaptive_sparse_after_step', type=int, default=3,
+                        help='Number of initial decoding steps to keep full attention before switching to sparse mode')
+    parser.add_argument('--adaptive_topk_fraction', type=float, default=0.25,
+                        help='Fraction of graph size used to choose sparse candidates when local_topk is unset')
+    parser.add_argument('--adaptive_topk_min', type=int, default=8,
+                        help='Minimum sparse candidate set size when local_topk is unset')
+    parser.add_argument('--size_conditioning', action='store_true',
+                        help='Condition decoder on graph size for cross-size generalization')
     parser.add_argument('--tanh_clipping', type=float, default=10.,
                         help='Clip the parameters to within +- this value using tanh. '
                              'Set to 0 to not perform any clipping.')
@@ -49,6 +59,8 @@ def get_options(args=None):
                              'used for warmup phase), 0 otherwise. Can only be used with rollout baseline.')
     parser.add_argument('--eval_batch_size', type=int, default=1024,
                         help="Batch size to use during (baseline) evaluation")
+    parser.add_argument('--num_workers', type=int, default=0,
+                        help='Number of DataLoader workers to use during training')
     parser.add_argument('--checkpoint_encoder', action='store_true',
                         help='Set to decrease memory usage by checkpointing encoder')
     parser.add_argument('--shrink_size', type=int, default=None,

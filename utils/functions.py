@@ -78,6 +78,7 @@ def load_args(filename):
 
 def load_model(path, epoch=None):
     from nets.attention_model import AttentionModel
+    from nets.adaptive_attention_model import AdaptiveHierarchicalAttentionRouter
     from nets.pointer_network import PointerNetwork
 
     if os.path.isfile(path):
@@ -100,22 +101,34 @@ def load_model(path, epoch=None):
 
     model_class = {
         'attention': AttentionModel,
+        'adaptive_attention': AdaptiveHierarchicalAttentionRouter,
         'pointer': PointerNetwork
     }.get(args.get('model', 'attention'), None)
     assert model_class is not None, "Unknown model: {}".format(model_class)
 
-    model = model_class(
-        args['embedding_dim'],
-        args['hidden_dim'],
-        problem,
+    model_kwargs = dict(
+        embedding_dim=args['embedding_dim'],
+        hidden_dim=args['hidden_dim'],
+        problem=problem,
         n_encode_layers=args['n_encode_layers'],
         mask_inner=True,
         mask_logits=True,
         normalization=args['normalization'],
         tanh_clipping=args['tanh_clipping'],
         checkpoint_encoder=args.get('checkpoint_encoder', False),
-        shrink_size=args.get('shrink_size', None)
+        shrink_size=args.get('shrink_size', None),
     )
+    if args.get('model', 'attention') == 'adaptive_attention':
+        model_kwargs.update(
+            local_topk=args.get('local_topk', None),
+            sparse_after_step=args.get('adaptive_sparse_after_step', 3),
+            adaptive_topk_fraction=args.get('adaptive_topk_fraction', 0.25),
+            adaptive_topk_min=args.get('adaptive_topk_min', 8),
+            size_conditioning=args.get('size_conditioning', False),
+            max_graph_size=args.get('graph_size', None),
+        )
+
+    model = model_class(**model_kwargs)
     # Overwrite model parameters by parameters to load
     load_data = torch_load_cpu(model_filename)
     model.load_state_dict({**model.state_dict(), **load_data.get('model', {})})

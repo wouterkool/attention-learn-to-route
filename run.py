@@ -6,13 +6,18 @@ import pprint as pp
 
 import torch
 import torch.optim as optim
-from tensorboard_logger import Logger as TbLogger
+
+try:
+    from tensorboard_logger import Logger as TbLogger
+except Exception:
+    TbLogger = None
 
 from nets.critic_network import CriticNetwork
 from options import get_options
 from train import train_epoch, validate, get_inner_model
 from reinforce_baselines import NoBaseline, ExponentialBaseline, CriticBaseline, RolloutBaseline, WarmupBaseline
 from nets.attention_model import AttentionModel
+from nets.adaptive_attention_model import AdaptiveHierarchicalAttentionRouter
 from nets.pointer_network import PointerNetwork, CriticNetworkLSTM
 from utils import torch_load_cpu, load_problem
 
@@ -27,8 +32,10 @@ def run(opts):
 
     # Optionally configure tensorboard
     tb_logger = None
-    if not opts.no_tensorboard:
+    if not opts.no_tensorboard and TbLogger is not None:
         tb_logger = TbLogger(os.path.join(opts.log_dir, "{}_{}".format(opts.problem, opts.graph_size), opts.run_name))
+    elif not opts.no_tensorboard:
+        print("TensorBoard logging disabled because tensorboard_logger is unavailable in this environment.")
 
     os.makedirs(opts.save_dir)
     # Save arguments so exact configuration can always be found
@@ -52,21 +59,32 @@ def run(opts):
     # Initialize model
     model_class = {
         'attention': AttentionModel,
+        'adaptive_attention': AdaptiveHierarchicalAttentionRouter,
         'pointer': PointerNetwork
     }.get(opts.model, None)
     assert model_class is not None, "Unknown model: {}".format(model_class)
-    model = model_class(
-        opts.embedding_dim,
-        opts.hidden_dim,
-        problem,
+    model_kwargs = dict(
+        embedding_dim=opts.embedding_dim,
+        hidden_dim=opts.hidden_dim,
+        problem=problem,
         n_encode_layers=opts.n_encode_layers,
         mask_inner=True,
         mask_logits=True,
         normalization=opts.normalization,
         tanh_clipping=opts.tanh_clipping,
         checkpoint_encoder=opts.checkpoint_encoder,
-        shrink_size=opts.shrink_size
-    ).to(opts.device)
+        shrink_size=opts.shrink_size,
+    )
+    if opts.model == 'adaptive_attention':
+        model_kwargs.update(
+            local_topk=opts.local_topk,
+            sparse_after_step=opts.adaptive_sparse_after_step,
+            adaptive_topk_fraction=opts.adaptive_topk_fraction,
+            adaptive_topk_min=opts.adaptive_topk_min,
+            size_conditioning=opts.size_conditioning,
+            max_graph_size=opts.graph_size,
+        )
+    model = model_class(**model_kwargs).to(opts.device)
 
     if opts.use_cuda and torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)
